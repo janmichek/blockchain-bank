@@ -1,5 +1,5 @@
 {
-  "name": "drizzle-template",
+  "name": "blockchain-bank",
   "version": "0.1",
   "description": "",
   "author": {
@@ -9,5 +9,10 @@
   "scripts": {
     "serve": "cd frontend && vue-cli-service serve",
     "deploy": "truffle compile --reset && truffle migrate --reset"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "3.3.0",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1"
   }
 }
