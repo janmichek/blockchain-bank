@@ -1,14 +1,14 @@
-const Token = artifacts.require("Token")
-const dBank = artifacts.require("dBank")
+const Token = artifacts.require('./Token')
+const DecentralizedBank = artifacts.require('./dBank')
 
 require('chai')
   .use(require('chai-as-promised'))
   .should()
 
+
 contract('dBank', ([deployer, user]) => {
   let dbank, token
-  const interestPerSecond = 31668017
-
+  const interestPerSecond = 31668017 //(10% APY) for min. deposit (0.01 ETH)
   // helpers
   const evm_revert = 'VM Exception while processing transaction: revert'
   const wait = s => {
@@ -18,11 +18,11 @@ contract('dBank', ([deployer, user]) => {
 
   beforeEach(async () => {
     token = await Token.new()
-    dbank = await dBank.new(token.address)
+    dbank = await DecentralizedBank.new(token.address)
     await token.passMinterRole(dbank.address, { from: deployer })
   })
 
-  describe('testing token contract', () => {
+  describe('testing token contract...', () => {
     describe('success', () => {
 
       it('checking token name', async () => {
@@ -37,7 +37,7 @@ contract('dBank', ([deployer, user]) => {
       })
 
       it('dBank should have Token minter role', async () => {
-        expect(await token.minter()).to.be.eq(dbank.address)
+        expect(await token.minter()).to.eq(dbank.address)
       })
     })
     describe('failure', () => {
@@ -60,7 +60,7 @@ contract('dBank', ([deployer, user]) => {
 
     describe('success', () => {
       beforeEach(async () => {
-        await dbank.deposit({ value: 10 ** 16, from: user })
+        await dbank.deposit({ value: 10 ** 16, from: user }) //0.01 ETH
       })
 
       it('balance should increase', async () => {
@@ -92,9 +92,7 @@ contract('dBank', ([deployer, user]) => {
         await wait(2) //accruing interest
 
         balance = await web3.eth.getBalance(user)
-
-        const eee = await dbank.withdraw({ from: user })
-        console.log('eee', eee)
+        await dbank.withdraw({ from: user })
       })
 
       it('balances should decrease', async () => {
@@ -125,9 +123,71 @@ contract('dBank', ([deployer, user]) => {
       it('withdrawing should be rejected', async () => {
         await dbank.deposit({ value: 10 ** 16, from: user }) //0.01 ETH
         await wait(2) //accruing interest
-        await dbank.withdraw({ from: deployer }).should.be.rejectedWith(EVM_REVERT) //wrong user
+        await dbank.withdraw({ from: deployer }).should.be.rejectedWith(evm_revert) //wrong user
       })
     })
   })
 
+  describe('testing borrow...', () => {
+
+    describe('success', () => {
+      beforeEach(async () => {
+        await dbank.borrow({ value: 10 ** 16, from: user }) //0.01 ETH
+      })
+
+      it('token total supply should increase', async () => {
+        expect(Number(await token.totalSupply())).to.eq(5 * (10 ** 15)) //10**16/2
+      })
+
+      it('balance of user should increase', async () => {
+        expect(Number(await token.balanceOf(user))).to.eq(5 * (10 ** 15)) //10**16/2
+      })
+
+      it('collateralEther should increase', async () => {
+        expect(Number(await dbank.collateralEther(user))).to.eq(10 ** 16) //0.01 ETH
+      })
+
+      it('user isBorrowed status should eq true', async () => {
+        expect(await dbank.isBorrowed(user)).to.eq(true)
+      })
+    })
+
+    describe('failure', () => {
+      it('borrowing should be rejected', async () => {
+        await dbank.borrow({ value: 10 ** 15, from: user }).should.be.rejectedWith(evm_revert) //to small amount
+      })
+    })
+  })
+
+  describe('testing payOff...', () => {
+
+    describe('success', () => {
+      beforeEach(async () => {
+        await dbank.borrow({ value: 10 ** 16, from: user }) //0.01 ETH
+        await token.approve(dbank.address, (5 * (10 ** 15)).toString(), { from: user })
+        await dbank.payOff({ from: user })
+      })
+
+      it('user token balance should eq 0', async () => {
+        expect(Number(await token.balanceOf(user))).to.eq(0)
+      })
+
+      it('dBank eth balance should get fee', async () => {
+        expect(Number(await web3.eth.getBalance(dbank.address))).to.eq(10 ** 15) //10% of 0.01 ETH
+      })
+
+      it('borrower data should be reseted', async () => {
+        expect(Number(await dbank.collateralEther(user))).to.eq(0)
+        expect(await dbank.isBorrowed(user)).to.eq(false)
+      })
+    })
+
+    describe('failure', () => {
+      it('paying off should be rejected', async () => {
+        await dbank.borrow({ value: 10 ** 16, from: user }) //0.01 ETH
+        await token.approve(dbank.address, (5 * (10 ** 15)).toString(), { from: user })
+        await dbank.payOff({ from: deployer }).should.be.rejectedWith(evm_revert) //wrong user
+      })
+    })
+  })
 })

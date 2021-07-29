@@ -10,12 +10,11 @@ module.exports = {
   contracts_build_directory: './frontend/src/contracts/',
   compilers: {
     solc: {
-      version: "0.8.0",
+      version: ">=0.6.0 <0.8.0",
       optimizer: {
         enabled: true,
-        runs: 200,
-      },
-      ecmaVersion: "petersburg",
-    },
-  },
+        runs: 200
+      }
+    }
+  }
 };
