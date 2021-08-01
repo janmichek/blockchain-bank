@@ -1,6 +1,9 @@
 <template>
-  <div id="app">
+  <div
+    id="app"
+    v-if="!isLoading">
     <header>
+      <h1>Bank DAPP</h1>
       Account: {{ account }}
       <br>
       Balance: {{ web3.utils.fromWei(balance, 'ether') }}
@@ -18,7 +21,6 @@
         type='number'>
 
       <button @click="deposit">DEPOSIT</button>
-
     </section>
     <hr>
     <section>
@@ -27,7 +29,7 @@
       Do you want to withdraw + take interest
       <br><br>
 
-      <button @click="withdraw">WITHDRAW</button>
+      <button @click="withdraw">WITHDRAW ALL</button>
     </section>
   </div>
 </template>
@@ -36,7 +38,6 @@
   import dBank from './contracts/dBank.json'
   import Token from './contracts/Token.json'
   import Web3 from 'web3'
-
 
   export default {
     name: 'app',
@@ -49,8 +50,8 @@
         balance: 0,
         dBankAddress: null,
         depositAmount: 0,
+        isLoading: true,
       }
-
     },
     async mounted () {
       await this.loadBlockchainData()
@@ -74,9 +75,9 @@
             this.token = new this.web3.eth.Contract(Token.abi, Token.networks[netId].address)
             this.dbank = new this.web3.eth.Contract(dBank.abi, dBank.networks[netId].address)
             this.dBankAddress = dBank.networks[netId].address
+            this.isLoading = false
           } catch (e) {
             /* eslint-disable no-console*/
-
             console.log('Error', e)
             window.alert('Contracts not deployed to the current network')
           }
@@ -90,6 +91,7 @@
           const amount = this.web3.utils.toWei(this.depositAmount, 'ether')
           try {
             await this.dbank.methods.deposit().send({ value: amount, from: this.account })
+            window.location.reload(true)
           } catch (e) {
             console.log('Error, deposit: ', e)
           }
@@ -100,12 +102,12 @@
         if (this.dbank !== 'undefined') {
           try {
             await this.dbank.methods.withdraw().send({ from: this.account })
+            window.location.reload(true)
           } catch (e) {
             console.log('Error, withdraw: ', e)
           }
         }
       },
-
     },
   }
 </script>
