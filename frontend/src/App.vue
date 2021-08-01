@@ -25,10 +25,8 @@
     <hr>
     <section>
       <h2>Withdraw</h2>
-
       Do you want to withdraw + take interest
       <br><br>
-
       <button @click="withdraw">WITHDRAW ALL</button>
     </section>
   </div>

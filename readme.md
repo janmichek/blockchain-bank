@@ -1,6 +1,8 @@
-### Blockchain Bank
+### Blockchain Bank DAPP
 
-This repository is inspired by tutorial:
+This app will let you to deposit amount of ETH and withdraw the whole deposit with an interest for saving the funds
+
+This repository is inspired by following tutorial:
 https://www.youtube.com/watch?v=xWFba_9QYmc
 
 ## Dependencies
@@ -17,6 +19,8 @@ https://www.youtube.com/watch?v=xWFba_9QYmc
 
 ### Deploy contracts to blockchain
 
+Run Ganache with Quickstart Workspace
+
 ```yarn deploy```
 
 ### Install frontend dependencies
@@ -26,8 +30,6 @@ https://www.youtube.com/watch?v=xWFba_9QYmc
 ```yarn install```
 
 ## Run project
-
-Run Ganache with Quickstart Workspace
 
 ```yarn serve```
 
